@@ -112,17 +112,17 @@ func (server *CenterServer) broadcast(params string) error {
 
 func (server *CenterServer) Handle(method, params string) *ipc.Response {
 	switch method {
-	case "addPlayer":
+	case "addplayer":
 		err := server.addPlayer(params)
 		if err != nil {
 			return &ipc.Response{Code: err.Error()}
 		}
-	case "removePlayer":
+	case "removeplayer":
 		err := server.removePlayer(params)
 		if err != nil {
 			return &ipc.Response{Code: err.Error()}
 		}
-	case "listPlayer":
+	case "listplayer":
 		player, err := server.listPlayer(params)
 		if err != nil {
 			return &ipc.Response{Code: err.Error()}
