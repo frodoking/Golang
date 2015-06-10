@@ -1,5 +1,8 @@
 package gin
 
+/************************************/
+/************   Param    ************/
+/************************************/
 // Param is a single URL parameter, consisting of a key and a value.
 type Param struct {
 	key   string
@@ -11,12 +14,36 @@ type Param struct {
 // It is therefore safe to read values by the index.
 type Params []Param
 
+// ByName returns the value of the first Param which key matches the given name.
+// If no matching Param is found, an empty string is returned.
+func (ps Params) Get(name string) (string, bool) {
+	for _, entry := range ps {
+		if entry.key == name {
+			return entry.value, true
+		}
+	}
+
+	return "", false
+}
+
+func (ps Params) ByName(name string) (va string) {
+	va, _ = ps.Get(name)
+	return
+}
+
+/************************************/
+/************  MethodTree  **********/
+/************************************/
 type MethodTree struct {
 	method string
 	root   *Node
 }
 
 type MethodTrees []MethodTree
+
+/************************************/
+/************      Node    **********/
+/************************************/
 
 type NodeType uint8
 

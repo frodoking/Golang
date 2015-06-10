@@ -2,6 +2,7 @@ package gin
 
 import (
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -118,7 +119,12 @@ func (group *RouterGroup) StaticFS(relativePath string, fs http.FileSystem) {
 		panic("URL parameters can not be used when serving a static folder")
 	}
 
-	handler := group.cre
+	handler := group.createStaticHandler(relativePath, fs)
+	urlPattern := path.Join(relativePath, "/*filepath")
+
+	// Register GET and HEAD handlers
+	group.GET(urlPattern, handler)
+	group.HEAD(urlPattern, handler)
 }
 
 func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
@@ -127,10 +133,10 @@ func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileS
 	_, nolisting := fs.(*onlyfilesFs)
 	return func(c *Context) {
 		if nolisting {
-
+			c.Writer.WriteHeader(404)
 		}
 
-		fileServer.ServeHTTP(c.W)
+		fileServer.ServeHTTP(c.Writer, c.Request)
 	}
 }
 

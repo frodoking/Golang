@@ -1,5 +1,9 @@
 package gin
 
+import (
+	"io"
+)
+
 var (
 	green   = string([]byte{27, 91, 57, 55, 59, 52, 50, 109})
 	white   = string([]byte{27, 91, 57, 48, 59, 52, 55, 109})
@@ -12,7 +16,30 @@ var (
 )
 
 func ErrorLogger() HandlerFunc {
-	return nil
+	return ErrorLoggerT(ErrorTypeAny)
+}
+
+func ErrorLoggerT(typ ErrorType) HandlerFunc {
+	return func(c *Context) {
+		c.Next()
+
+		if !c.Writer.Written() {
+			json := c.Errors.ByType(typ).JSON()
+			if json != nil {
+
+			}
+		}
+	}
+}
+
+// Instances a Logger middleware that will write the logs to gin.DefaultWriter
+// By default gin.DefaultWriter = os.Stdout
+func Logger() HandlerFunc {
+	return LoggerWithWriter(DefaultWriter)
+}
+
+func LoggerWithWriter(out io.Writer) HandlerFunc {
+
 }
 
 func colorForStatus(code int) string {
