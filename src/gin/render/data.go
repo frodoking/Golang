@@ -9,11 +9,11 @@ type Data struct {
 	Data        []byte
 }
 
-func (this *Data) Write(w http.ResponseWriter) error {
-	if len(this.ContentType) > 0 {
-		w.Header()["Content-Type"] = []string{this.ContentType}
+func (d Data) Write(w http.ResponseWriter) error {
+	if len(d.ContentType) > 0 {
+		w.Header()["Content-Type"] = []string{d.ContentType}
 	}
 
-	w.Write(this.Data)
+	w.Write(d.Data)
 	return nil
 }

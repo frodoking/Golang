@@ -30,3 +30,7 @@ type (
 		trees       MethodTrees
 	}
 )
+
+func (e *Engine) addRoute(method, path string, handlers HandlersChain) {
+
+}

@@ -11,7 +11,7 @@ type XML struct {
 
 var xmlContentType = []string{"application/xml; chartset=utf-8"}
 
-func (this *XML) Write(w http.ResponseWriter) error {
+func (x XML) Write(w http.ResponseWriter) error {
 	w.Header()["Content-Type"] = xmlContentType
-	return xml.NewEncoder(w).Encode(this.Data)
+	return xml.NewEncoder(w).Encode(x.Data)
 }

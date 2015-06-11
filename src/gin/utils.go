@@ -9,7 +9,7 @@ import (
 
 type H map[string]interface{}
 
-func WrapF(f http.HandleFunc) HandlerFunc {
+func WrapF(f http.HandlerFunc) HandlerFunc {
 	return func(c *Context) {
 		f(c.Writer, c.Request)
 	}
@@ -62,7 +62,7 @@ func parseAccept(acceptHeader string) []string {
 	parts := strings.Split(acceptHeader, ",")
 	out := make([]string, 0, len(parts))
 	for _, part := range parts {
-		index := strings.IndexByte(part, ":")
+		index := strings.IndexByte(part, ';')
 		if index > 0 {
 			part = part[0:index]
 		}

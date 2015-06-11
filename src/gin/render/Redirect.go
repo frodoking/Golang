@@ -11,11 +11,11 @@ type Redirect struct {
 	Location string
 }
 
-func (this *Redirect) Write(w http.ResponseWriter) error {
-	if this.Code < 300 || this.Code > 308 {
-		panic(fmt.Sprintf("Cannot redirect with status code %d", this.Code))
+func (r Redirect) Write(w http.ResponseWriter) error {
+	if r.Code < 300 || r.Code > 308 {
+		panic(fmt.Sprintf("Cannot redirect with status code %d", r.Code))
 	}
 
-	http.Redirect(w, this.Request, this.Location, this.Code)
+	http.Redirect(w, r.Request, r.Location, r.Code)
 	return nil
 }

@@ -39,7 +39,7 @@ func Logger() HandlerFunc {
 }
 
 func LoggerWithWriter(out io.Writer) HandlerFunc {
-
+	return nil
 }
 
 func colorForStatus(code int) string {

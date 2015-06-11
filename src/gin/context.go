@@ -41,7 +41,7 @@ type Context struct {
 
 	Params   Params
 	handlers HandlersChain
-	index    uint8
+	index    int8
 
 	engine    *Engine
 	Keys      map[string]interface{}
@@ -66,7 +66,7 @@ func (c *Context) reset() {
 }
 
 func (c *Context) Copy() *Context {
-	var cp Context = c
+	var cp Context = *c
 	cp.writermen.ResponseWriter = nil
 	cp.Writer = &cp.writermen
 	cp.index = AbortIndex
@@ -198,7 +198,7 @@ func (c *Context) DefaultPostForm(key, defaultValue string) string {
 }
 
 func (c *Context) DefaultQuery(key, defaultValue string) string {
-	if va, ok := c.Query(key); ok {
+	if va, ok := c.query(key); ok {
 		return va
 	}
 	return defaultValue
@@ -230,11 +230,11 @@ func (c *Context) Bind(obj interface{}) error {
 }
 
 func (c *Context) BindJSON(obj interface{}) error {
-	c.BindWith(obj, binding.JSON)
+	return c.BindWith(obj, binding.JSON)
 }
 
 func (c *Context) BindWith(obj interface{}, b binding.Binding) error {
-	if err := b.Bind(obj, binding.JSON); err != nil {
+	if err := b.Bind(c.Request, obj); err != nil {
 		c.AbortWithError(400, err).SetType(ErrorTypeBind)
 		return err
 	}
@@ -400,7 +400,7 @@ func (c *Context) NegotiateFormat(offered ...string) string {
 
 	for _, accepted := range c.Accecpted {
 		for _, offert := range offered {
-			if accepted == offset {
+			if accepted == offert {
 				return offert
 			}
 		}

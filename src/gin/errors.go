@@ -63,7 +63,7 @@ func (msg *Error) JSON() interface{} {
 }
 
 // Implements the json.Marshaller interface
-func (msg *Error) MarshlJSON([]byte, error) {
+func (msg *Error) MarshlJSON() ([]byte, error) {
 	return json.Marshal(msg.JSON())
 }
 

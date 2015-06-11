@@ -16,7 +16,7 @@ type RouterGroup struct {
 
 // Adds middlewares to the group, see example code in github.
 func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
-	group.Handlers = append(group.Handlers, middlewares)
+	group.Handlers = append(group.Handlers, middlewares...)
 }
 
 // Creates a new router group. You should add all the routes that have common middlwares or the same path prefix.
@@ -130,7 +130,7 @@ func (group *RouterGroup) StaticFS(relativePath string, fs http.FileSystem) {
 func (group *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) HandlerFunc {
 	absolutePath := group.calculateAbsolutePath(relativePath)
 	fileServer := http.StripPrefix(absolutePath, http.FileServer(fs))
-	_, nolisting := fs.(*onlyfilesFs)
+	_, nolisting := fs.(*OnlyFilesFS)
 	return func(c *Context) {
 		if nolisting {
 			c.Writer.WriteHeader(404)

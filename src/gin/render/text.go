@@ -13,16 +13,16 @@ type String struct {
 
 var plainContentType = []string{"text/plain; chartset=utf-8"}
 
-func (this *String) Write(w http.ResponseWriter) error {
+func (s String) Write(w http.ResponseWriter) error {
 	header := w.Header()
 	if _, exist := header["Content-Type"]; !exist {
 		header["Content-Type"] = plainContentType
 	}
 
-	if len(this.Data) > 0 {
-		fmt.Fprintf(w, this.Format, this.Data...)
+	if len(s.Data) > 0 {
+		fmt.Fprintf(w, s.Format, s.Data...)
 	} else {
-		io.WriteString(w, this.Format)
+		io.WriteString(w, s.Format)
 	}
 
 	return nil
