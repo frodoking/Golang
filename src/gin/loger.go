@@ -1,7 +1,9 @@
 package gin
 
 import (
+	"fmt"
 	"io"
+	"time"
 )
 
 var (
@@ -39,7 +41,36 @@ func Logger() HandlerFunc {
 }
 
 func LoggerWithWriter(out io.Writer) HandlerFunc {
-	return nil
+	return func(c *Context) {
+
+		// start timer
+		start := time.Now()
+		path := c.Request.URL.Path
+
+		//Process request
+		c.Next()
+
+		//stop timer
+		end := time.Now()
+		latency := end.Sub(start)
+
+		clientIP := c.ClientIP()
+		method := c.Request.Method
+		statusCode := c.Writer.Status()
+		statusColor := colorForStatus(statusCode)
+		methodColor := colorForMethod(method)
+		comment := c.Errors.String()
+
+		fmt.Fprintf(out, "[GIN] %v |%s %3d %s| %13v | %s | %s %s %-7s %s\n%s",
+			end.Format("2006/01/02 - 15:04:05"),
+			statusColor, statusCode, reset,
+			latency,
+			clientIP,
+			methodColor, reset, method,
+			path,
+			comment,
+		)
+	}
 }
 
 func colorForStatus(code int) string {

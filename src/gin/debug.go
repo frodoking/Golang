@@ -34,10 +34,6 @@ func debugPrintWARNING() {
 
 func debugPrintError(err error) {
 	if err != nil {
-		debugPrint(" [ERROR] %v\n", err)
+		debugPrint("[ERROR] %v\n", err)
 	}
-}
-
-func nameOfFunction(h HandlerFunc) string {
-	return ""
 }
