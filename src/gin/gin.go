@@ -1,6 +1,10 @@
 package gin
 
 import (
+	"html/template"
+	"net"
+	"net/http"
+	"os"
 	"sync"
 )
 
@@ -80,10 +84,81 @@ func New() *Engine {
 	return engine
 }
 
+// Returns a Engine instance with the Logger and Recovery already attached.
+func Default() *Engine {
+	engine := New()
+	engine.Use(Recovery(), Logger())
+	return engine
+}
+
 func (e *Engine) allocateContext() (context *Context) {
 	return &Context{engine: e}
 }
 
-func (e *Engine) addRoute(method, path string, handlers HandlersChain) {
+func (e *Engine) LoadHTMLGlob(pattern string) {
+	if IsDebugging() {
+		e.HTMLRender = render.HTMLDebug{Glob: pattern}
+	} else {
+		templ := template.Must(template.ParseGlob(pattern))
+		e.SetHTMLTemplate(templ)
+	}
+}
 
+func (e *Engine) LoadHTMLFiles(files ...string) {
+	if IsDebugging() {
+		e.HTMLRender = render.HTMLDebug{Files: files}
+	} else {
+		templ := template.Must(template.ParseFiles(files))
+		e.SetHTMLTemplate(templ)
+	}
+}
+
+func (e *Engine) SetHTMLTemplate(templ *template.Template) {
+	e.HTMLRender = render.HTMLProduction{Template: templ}
+}
+
+// Adds handlers for NoRoute. It return a 404 code by default.
+func (e *Engine) NoRoute(handlers ...HandlerFunc) {
+	e.noRoute = handlers
+	e.rebuild404Handlers()
+}
+
+func (e *Engine) noMethod(handlers ...HandlerFunc) {
+	e.noMethod = handlers
+	e.rebuild405Handlers()
+}
+
+// Attachs a global middleware to the router. ie. the middlewares attached though Use() will be
+// included in the handlers chain for every single request. Even 404, 405, static files...
+// For example, this is the right place for a logger or error management middleware.
+func (e *Engine) Use(middlewares ...HandlerFunc) {
+	e.RouterGroup.Use(middlewares...)
+	e.rebuild404Handlers()
+	e.rebuild405Handlers()
+}
+
+func (e *Engine) rebuild404Handlers() {
+	e.allNoRoute = e.combineHandlers(e.noRoute)
+}
+
+func (e *Engine) rebuild405Handlers() {
+	e.allNoMethod = e.combineHandlers(e.noMethod)
+}
+
+func (e *Engine) addRoute(method, path string, handlers HandlersChain) {
+	debugPrintRoute(method, path, handlers)
+
+	if path[0] != '/' {
+		panic("path must begin with '/'")
+	}
+
+	if method == "" {
+		panic("HTTP method can not be empty")
+	}
+
+	if len(handlers) == 0 {
+		panic("there must be at least one handler")
+	}
+
+	// FIXME
 }
