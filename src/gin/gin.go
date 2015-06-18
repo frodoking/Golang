@@ -160,5 +160,177 @@ func (e *Engine) addRoute(method, path string, handlers HandlersChain) {
 		panic("there must be at least one handler")
 	}
 
-	// FIXME
+	root := e.trees.get("method")
+	if root == nil {
+		root = new(Node)
+		e.trees = append(e.trees, MethodTree{
+			method: method,
+			root:   root,
+		})
+	}
+
+	root.addRoute(path, handlers)
+}
+
+// The router is attached to a http.Server and starts listening and serving HTTP requests.
+// It is a shortcut for http.ListenAndServe(addr, router)
+// Note: this method will block the calling goroutine undefinitelly unless an error happens.
+func (e *Engine) Run(addr string) (err error) {
+	debugPrint("Listening and serving HTTP on %s\n", addr)
+	defer func() {
+		debugPrintError(err)
+	}()
+
+	err = http.ListenAndServe(addr, e)
+	return
+}
+
+// The router is attached to a http.Server and starts listening and serving HTTPS requests.
+// It is a shortcut for http.ListenAndServeTLS(addr, certFile, keyFile, router)
+// Note: this method will block the calling goroutine undefinitelly unless an error happens.
+func (e *Engine) RunTLS(addr, certFile, keyFile string) (err error) {
+	debugPrint("Listening and serving HTTPS on %S\n", addr)
+	defer func() {
+		debugPrintError(err)
+	}()
+
+	err = http.ListenAndServeTLS(addr, certFile, keyFile, e)
+	return
+}
+
+// The router is attached to a http.Server and starts listening and serving HTTP requests
+// through the specified unix socket (ie. a file)
+// Note: this method will block the calling goroutine undefinitelly unless an error happens.
+func (e *Engine) RunUnix(file string) (err error) {
+	debugPrint("Listening and serving HTTPS on unix:/%S\n", file)
+	defer func() {
+		debugPrintError(err)
+	}()
+
+	os.Remove(file)
+	listener, err := net.Listen("unix", file)
+	if err != nil {
+		return
+	}
+
+	defer listener.Close()
+	err = http.Serve(listener, e)
+	return
+}
+
+// Conforms to the http.Handler interface.
+func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	c := e.pool.Get().(*Context)
+	c.writermen.reset(w)
+	c.Request = req
+	c.reset()
+
+	e.handleHTTPRequest(c)
+
+	e.pool.Put(c)
+}
+
+func (e *Engine) handleHTTPRequest(c *Context) {
+	httpMethod := c.Request.Method
+	path := c.Request.URL.Path
+
+	// Find root of the tree for the given HTTP method
+	t := e.trees
+	for i, tl := 0, len(t); i < tl; i++ {
+		if t[i].method == httpMethod {
+			root := t[i].root
+			//Find route in tree
+			handlers, params, tsr := root.getValue(path, c.Params)
+			if handlers != nil {
+				c.handlers = handlers
+				c.Params = params
+				c.Next()
+				c.writermen.WriteHeaderNow()
+				return
+			} else if httpMethod != "CONNECT" && path != "/" {
+				if tsr && e.RedirectFixedPath {
+					redirectTrailingSlash(c)
+					return
+				}
+
+				if e.RedirectFixedPath && redirectFixedPath(c, root, e.RedirectFixedPath) {
+					return
+				}
+			}
+		}
+	}
+
+	// TODO: unit test
+	if e.HandleMethodNotAllowed {
+		for _, tree := range e.trees {
+			if tree.method != httpMethod {
+				if handlers, _, _ := tree.root.getValue(path, nil); handlers != nil {
+					c.handlers = e.allNoMethod
+					serveError(c, 405, default405Body)
+					return
+				}
+			}
+		}
+	}
+
+	c.handlers = e.allNoRoute
+	serveError(c, 404, default404Body)
+
+}
+
+var mimePlain = []string{MIMEPlain}
+
+func serveError(c *Context, code int, defaultMessage []byte) {
+	c.writermen.status = code
+	c.Next()
+	if !c.writermen.Written() {
+		if c.writermen.Status() == code {
+			c.writermen.Header()["Content-Type"] = mimePlain
+			c.Writer.Write(defaultMessage)
+		} else {
+			c.writermen.WriteHeaderNow()
+		}
+	}
+}
+
+func redirectFixedPath(c *Context, root *Node, trailingSlash bool) bool {
+	req := c.Request
+	path := req.URL.Path
+
+	fixedPath, found := root.findCaseInsensitivePath(
+		cleanPath(path),
+		trailingSlash,
+	)
+
+	if found {
+		code := 301 // Permanent redirect, request with GET method
+		if req.Method != "GET" {
+			code = 307
+		}
+		req.URL.Path = string(fixedPath)
+		debugPrint("redirecting request %d: %s --> %s", code, path, req.URL.String())
+		http.Redirect(c.Writer, req, req.URL.String(), code)
+		c.writermem.WriteHeaderNow()
+		return true
+	}
+	return false
+}
+
+func (e *Engine) redirectTrailingSlash(c *Context) {
+	req := c.Request
+	path := req.URL.Path
+	code := 301 // Parmanent redirct, request with GET method
+	if req.Method != "GET" {
+		code = 307
+	}
+
+	if len(path) > 1 && path[len(path)-1] == '/' {
+		req.URL.Path = path[:len(path)-1]
+	} else {
+		req.URL.Path = path + "/"
+	}
+
+	debugPrint("redirecting request %d: %s --> %s", code, path, req.URL.String())
+	http.Redirect(c.Writer, req, req.URL.String(), code)
+	c.writermen.WriteHeaderNow()
 }
