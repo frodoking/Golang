@@ -1,0 +1,85 @@
+// Stepping straight through the program.
+
+-> _ = "breakpoint"
+(godebug) n
+-> x = mul(x, x)
+(godebug) x
+4
+(godebug) p x
+4
+(godebug) s
+-> var x int
+(godebug) x
+Command not recognized, sorry!
+(godebug) p x
+x is not in scope (or is in package scope). Can't print it.
+(godebug) n
+-> for i := 0; i < m; i++ {
+(godebug) x
+0
+(godebug) i
+Command not recognized, sorry!
+(godebug) p m
+4
+(godebug) n
+-> x = add(x, m)
+(godebug) x
+0
+(godebug) i
+0
+(godebug) m
+4
+(godebug) n
+-> for i := 0; i < m; i++ {
+(godebug) x
+4
+(godebug) p i
+1
+(godebug) p m
+4
+(godebug) p n
+4
+(godebug) n
+-> x = add(x, m)
+(godebug) x
+4
+(godebug) n
+-> for i := 0; i < m; i++ {
+(godebug) x
+8
+(godebug) p i
+2
+(godebug) n
+-> x = add(x, m)
+(godebug) n
+-> for i := 0; i < m; i++ {
+(godebug) i
+3
+(godebug) n
+-> x = add(x, m)
+(godebug) n
+-> for i := 0; i < m; i++ {
+(godebug) i
+4
+(godebug) m
+4
+(godebug) x
+16
+(godebug) n
+-> return x
+(godebug) x
+16
+(godebug) n
+-> if x == 4 {
+(godebug) x
+16
+(godebug) n
+-> } else if n := 2; n == 3 {
+(godebug) n
+-> } else {
+(godebug) n
+-> fmt.Println("What's going on? x ==", x)
+(godebug) x
+16
+(godebug) n
+What's going on? x == 16

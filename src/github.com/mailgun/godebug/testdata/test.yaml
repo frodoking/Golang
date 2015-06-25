@@ -1,0 +1,216 @@
+---
+desc: should be able to step into a TestXxx function.
+invocations:
+    - dir: /gopath/src/foo
+      cmd: godebug test
+    - dir: /
+      cmd: godebug test foo
+creates:
+    - $TMP/src/foo/foo.go
+    - $TMP/src/foo/foo_test.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> t.Fail()
+    (godebug) next
+    --- FAIL: TestFoo //substr
+    FAIL
+
+nonzero_exit: true
+
+---
+desc: should be able to follow execution through multiple TestXxx functions.
+invocations:
+    - dir: /gopath/src/testpkg
+      cmd: godebug test
+    - dir: /
+      cmd: godebug test testpkg
+creates:
+    - $TMP/src/testpkg/pkg.go
+    - $TMP/src/testpkg/pkg_test.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> _ = "inside Func1"
+    (godebug) next
+    -> _ = "after Func1"
+    (godebug) next
+    -> _ = "in TestB"
+    (godebug) next
+    -> Func2()
+    (godebug) step
+    -> _ = "inside Func2"
+    (godebug) continue
+    -> _ = "breakpoint"
+    (godebug) n
+    -> _ = "in TestC"
+    (godebug) continue
+    PASS
+
+---
+desc: should be able to pass a testflag argument to the test binary.
+invocations:
+    - dir: /gopath/src/testpkg
+      cmd: godebug test -test.run=TestB
+    - dir: /
+      cmd: godebug test testpkg -test.run=TestB
+creates:
+    - $TMP/src/testpkg/pkg.go
+    - $TMP/src/testpkg/pkg_test.go
+
+transcript: |
+    PASS
+
+---
+desc: should be able to pass a testflag argument to the test binary and hit breakpoints.
+invocations:
+    - dir: /gopath/src/testpkg
+      cmd: godebug test -test.run=TestC
+    - dir: /
+      cmd: godebug test testpkg -test.run=TestC
+creates:
+    - $TMP/src/testpkg/pkg.go
+    - $TMP/src/testpkg/pkg_test.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> _ = "in TestC"
+    (godebug) continue
+    PASS
+
+---
+desc: should NOT be able to step into external packages that have NOT been flagged with -instrument.
+invocations:
+    - dir: /gopath/src/testpkg/subdir
+      cmd: godebug test
+    - dir: /
+      cmd: godebug test testpkg/subdir
+creates:
+    - $TMP/src/testpkg/subdir/pkg_test.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    foo
+    -> _ = "finishing test"
+    (godebug) step
+    PASS
+
+---
+desc: when -godebugwork is passed, should print temp directory and not delete it on exit
+invocations:
+    - dir: /
+      cmd: godebug test -godebugwork testpkg/subdir
+creates:
+    - $TMP/src/testpkg/subdir/pkg_test.go
+
+transcript: |
+    $TMP
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    foo
+    -> _ = "finishing test"
+    (godebug) step
+    PASS
+
+godebugwork: true
+
+---
+desc: when -godebugwork is passed, should print temp directory and not delete it on exit
+invocations:
+    - dir: /
+      cmd: godebug test -godebugwork -instrument foo testpkg/subdir
+creates:
+    - $TMP/src/testpkg/subdir/pkg_test.go
+    - $TMP/src/foo/foo.go
+
+transcript: |
+    $TMP
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    -> fmt.Println("foo")
+    (godebug) step
+    foo
+    -> _ = "finishing test"
+    (godebug) step
+    PASS
+
+godebugwork: true
+
+---
+desc: SHOULD be able to step into external packages that HAVE been flagged with -instrument.
+invocations:
+    - dir: /gopath/src/testpkg/subdir
+      cmd: godebg test -instrument foo
+    - dir: /
+      cmd: godebug test -instrument foo testpkg/subdir
+creates:
+    - $TMP/src/testpkg/subdir/pkg_test.go
+    - $TMP/src/foo/foo.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    -> fmt.Println("foo")
+    (godebug) continue
+    foo
+    PASS
+
+---
+desc: should be able to pass "..." to -instrument flag
+invocations:
+    - dir: /
+      cmd: godebug test -instrument=foo/... testpkg2
+    - dir: /gopath/src/testpkg2
+      cmd: godebug test -instrument foo/...
+creates:
+    - $TMP/src/testpkg2/test_test.go
+    - $TMP/src/foo/foo.go
+    - $TMP/src/foo/subfoo/subfoo.go
+
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    -> fmt.Println("foo")
+    (godebug) step
+    foo
+    -> subfoo.SubFoo()
+    (godebug) step
+    -> _ = "in subfoo"
+    (godebug) next
+    PASS
+
+---
+desc: godebug should warn the user if an uninstrumented file contains a breakpoint
+invocations:
+    - dir: /
+      cmd: godebug test testpkg2
+    - dir: /gopath/src/testpkg2
+      cmd: godebug test
+creates:
+    - $TMP/src/testpkg2/test_test.go
+
+transcript: |
+    godebug test: Ignoring breakpoint at foo/subfoo/subfoo.go:8 because package "subfoo" has not been flagged for instrumentation. See 'godebug help test'.//slashes
+
+    -> _ = "breakpoint"
+    (godebug) n
+    -> foo.Foo()
+    (godebug) step
+    foo
+    -> subfoo.SubFoo()
+    (godebug) step
+    PASS

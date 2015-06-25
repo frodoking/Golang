@@ -1,0 +1,51 @@
+-> _ = "breakpoint"
+(godebug) n
+-> switch a := a(); {
+(godebug) next
+-> default:
+(godebug) next
+-> _ = a
+(godebug) a
+0
+(godebug) next
+-> _ = "the variable a should be out of scope"
+(godebug) a
+Command not recognized, sorry!
+(godebug) continue
+hello
+test
+-> _ = "breakpoint"
+(godebug) n
+-> const n = 10
+(godebug) next
+-> _ = n
+(godebug) print n
+10
+(godebug) next
+-> name1(5)
+(godebug) step
+-> if true {
+(godebug) print name1
+5
+(godebug) next
+-> _ = name1
+(godebug) next
+-> name2()
+(godebug) step
+-> if true {
+(godebug) print name2
+""
+(godebug) next
+-> name2 = "foo"
+(godebug) next
+-> return name2
+(godebug) print name2
+"foo"
+(godebug) next
+-> T{}.name3()
+(godebug) step
+-> if true {
+(godebug) print name3
+main.T{}
+(godebug) continue
+Hello

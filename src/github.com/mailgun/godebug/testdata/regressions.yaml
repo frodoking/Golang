@@ -1,0 +1,36 @@
+---
+desc: use correct scope when first declaration in a function happens in a loop
+invocations:
+    - dir: /
+      cmd: godebug run regressions/loop-decl.go
+creates:
+    - $TMP/loop-decl.go
+transcript: |
+    -> _ = "breakpoint"
+    (godebug) n
+    -> _ = i
+    (godebug) print i
+    0
+    (godebug) continue
+    -> _ = "breakpoint"
+    (godebug) n
+    -> _ = s
+    (godebug) print s
+    "hello"
+    (godebug) continue
+---
+desc: godebug should work with filenames that start with numbers
+invocations:
+    - dir: /
+      cmd: godebug run regressions/1.go
+creates:
+    - $TMP/1.go
+transcript:
+---
+desc: else-if should work when no local variables have been declared
+invocations:
+    - dir: /
+      cmd: godebug run regressions/else-if.go
+creates:
+    - $TMP/else-if.go
+transcript:

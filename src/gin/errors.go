@@ -56,14 +56,14 @@ func (msg *Error) JSON() interface{} {
 	}
 
 	if _, ok := json["error"]; !ok {
-		json["error"] = msg.Err
+		json["error"] = msg.Error()
 	}
 
 	return json
 }
 
 // Implements the json.Marshaller interface
-func (msg *Error) MarshlJSON() ([]byte, error) {
+func (msg *Error) MarshalJSON() ([]byte, error) {
 	return json.Marshal(msg.JSON())
 }
 

@@ -108,7 +108,7 @@ func (e *Engine) LoadHTMLFiles(files ...string) {
 	if IsDebugging() {
 		e.HTMLRender = render.HTMLDebug{Files: files}
 	} else {
-		templ := template.Must(template.ParseFiles(files))
+		templ := template.Must(template.ParseFiles(files...))
 		e.SetHTMLTemplate(templ)
 	}
 }
@@ -123,7 +123,7 @@ func (e *Engine) NoRoute(handlers ...HandlerFunc) {
 	e.rebuild404Handlers()
 }
 
-func (e *Engine) noMethod(handlers ...HandlerFunc) {
+func (e *Engine) NoMethod(handlers ...HandlerFunc) {
 	e.noMethod = handlers
 	e.rebuild405Handlers()
 }
@@ -310,13 +310,13 @@ func redirectFixedPath(c *Context, root *Node, trailingSlash bool) bool {
 		req.URL.Path = string(fixedPath)
 		debugPrint("redirecting request %d: %s --> %s", code, path, req.URL.String())
 		http.Redirect(c.Writer, req, req.URL.String(), code)
-		c.writermem.WriteHeaderNow()
+		c.writermen.WriteHeaderNow()
 		return true
 	}
 	return false
 }
 
-func (e *Engine) redirectTrailingSlash(c *Context) {
+func redirectTrailingSlash(c *Context) {
 	req := c.Request
 	path := req.URL.Path
 	code := 301 // Parmanent redirct, request with GET method

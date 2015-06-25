@@ -1,5 +1,10 @@
 package gin
 
+import (
+	"strings"
+	"unicode"
+)
+
 /************************************/
 /************   Param    ************/
 /************************************/
@@ -129,7 +134,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 	n.priority++
 	numParams := countParams(path)
 
-	//non-empty tree
+	// non-empty tree
 	if len(n.path) > 0 || len(n.children) > 0 {
 	walk:
 		for {
@@ -137,6 +142,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 			if numParams > n.maxParams {
 				n.maxParams = numParams
 			}
+
 			// Find the longest common prefix.
 			// This also implies that the common prefix contains no ':' or '*'
 			// since the existing key can't contain those chars.
@@ -148,7 +154,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 
 			// Split edge
 			if i < len(n.path) {
-				child := &Node{
+				child := Node{
 					path:      n.path[i:],
 					wildChild: n.wildChild,
 					indices:   n.indices,
@@ -178,7 +184,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 
 				if n.wildChild {
 					n = n.children[0]
-					n++
+					n.priority++
 
 					// Update maxParams of the child node
 					if numParams > n.maxParams {
@@ -186,7 +192,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 					}
 					numParams--
 
-					// FIXME Check if the wildCard matches
+					// Check if the wildcard matches
 					if len(path) >= len(n.path) && n.path == path[:len(n.path)] {
 						// check for longer wildcard, e.g. :name and :names
 						if len(n.path) >= len(path) || path[len(n.path)] == '/' {
@@ -208,6 +214,7 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 					continue walk
 				}
 
+				// Check if a child with the next path byte exists
 				for i := 0; i < len(n.indices); i++ {
 					if c == n.indices[i] {
 						i = n.incrementChildPrio(i)
@@ -216,23 +223,23 @@ func (n *Node) addRoute(path string, handlers HandlersChain) {
 					}
 				}
 
+				// Otherwise insert it
 				if c != ':' && c != '*' {
 					// []byte for proper unicode char conversion, see #65
 					n.indices += string([]byte{c})
 					child := &Node{
 						maxParams: numParams,
 					}
-
 					n.children = append(n.children, child)
 					n.incrementChildPrio(len(n.indices) - 1)
 					n = child
 				}
 				n.insertChild(numParams, path, fullPath, handlers)
 				return
-			} else if i == len(path) {
-				// Make node a (in-path) leaf
+
+			} else if i == len(path) { // Make node a (in-path) leaf
 				if n.handlers != nil {
-					panic("handlers are already registered for path: '" + fullPath + "'")
+					panic("handlers are already registered for path ''" + fullPath + "'")
 				}
 				n.handlers = handlers
 			}
@@ -403,8 +410,8 @@ walk: // Outer loop for walking the tree
 					}
 					i := len(p)
 					p = p[:i+1] // expand slice within preallocated capacity
-					p[i].Key = n.path[1:]
-					p[i].Value = path[:end]
+					p[i].key = n.path[1:]
+					p[i].value = path[:end]
 
 					// we need to go deeper!
 					if end < len(path) {
@@ -437,8 +444,8 @@ walk: // Outer loop for walking the tree
 					}
 					i := len(p)
 					p = p[:i+1] // expand slice within preallocated capacity
-					p[i].Key = n.path[2:]
-					p[i].Value = path
+					p[i].key = n.path[2:]
+					p[i].value = path
 
 					handlers = n.handlers
 					return

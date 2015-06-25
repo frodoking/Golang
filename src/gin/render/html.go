@@ -28,39 +28,39 @@ type (
 
 var htmlContentType = []string{"text/html; chartset=utf-8"}
 
-func (this *HTMLProduction) Instance(name string, data interface{}) Render {
-	return &HTML{
-		Template: this.Template,
+func (p HTMLProduction) Instance(name string, data interface{}) Render {
+	return HTML{
+		Template: p.Template,
 		Name:     name,
 		Data:     data,
 	}
 }
 
-func (this *HTMLDebug) Instance(name string, data interface{}) Render {
-	return &HTML{
-		Template: this.loadTemplate(),
+func (d HTMLDebug) Instance(name string, data interface{}) Render {
+	return HTML{
+		Template: d.loadTemplate(),
 		Name:     name,
 		Data:     data,
 	}
 }
 
-func (this *HTMLDebug) loadTemplate() *template.Template {
-	if len(this.Files) > 0 {
-		return template.Must(template.ParseFiles(this.Files...))
+func (d HTMLDebug) loadTemplate() *template.Template {
+	if len(d.Files) > 0 {
+		return template.Must(template.ParseFiles(d.Files...))
 	}
 
-	if len(this.Glob) > 0 {
-		return template.Must(template.ParseGlob(this.Glob))
+	if len(d.Glob) > 0 {
+		return template.Must(template.ParseGlob(d.Glob))
 	}
 
 	panic("the HTML debug render was created without files or glob pattern")
 }
 
-func (this *HTML) Write(w http.ResponseWriter) error {
+func (h HTML) Write(w http.ResponseWriter) error {
 	w.Header()["Content-Type"] = htmlContentType
-	if len(this.Name) == 0 {
-		return this.Template.Execute(w, this.Data)
+	if len(h.Name) == 0 {
+		return h.Template.Execute(w, h.Data)
 	} else {
-		return this.Template.ExecuteTemplate(w, this.Name, this.Data)
+		return h.Template.ExecuteTemplate(w, h.Name, h.Data)
 	}
 }
