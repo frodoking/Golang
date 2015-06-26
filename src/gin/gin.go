@@ -218,7 +218,7 @@ func (e *Engine) RunUnix(file string) (err error) {
 	return
 }
 
-// Conforms to the http.Handler interface.
+// Conforms to the http.Handler interface. (实现了http.Handler接口的ServeHTTP方法)
 func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := e.pool.Get().(*Context)
 	c.writermen.reset(w)
@@ -275,7 +275,6 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 
 	c.handlers = e.allNoRoute
 	serveError(c, 404, default404Body)
-
 }
 
 var mimePlain = []string{MIMEPlain}

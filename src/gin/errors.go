@@ -7,7 +7,17 @@ import (
 	"reflect"
 )
 
-type ErrorType uint64
+type (
+	ErrorType uint64
+
+	Error struct {
+		Err  error
+		Type ErrorType
+		Meta interface{}
+	}
+
+	ErrorMsgs []*Error
+)
 
 const (
 	ErrorTypeBind    ErrorType = 1 << 63 // used when c.Bind() fails
@@ -17,16 +27,6 @@ const (
 
 	ErrorTypeAny ErrorType = 1<<64 - 1
 	ErrorTypeNu            = 2
-)
-
-type (
-	Error struct {
-		Err  error
-		Type ErrorType
-		Meta interface{}
-	}
-
-	ErrorMsgs []*Error
 )
 
 func (msg *Error) SetType(flags ErrorType) *Error {

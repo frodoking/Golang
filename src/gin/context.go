@@ -44,7 +44,7 @@ type Context struct {
 	index    int8
 
 	engine    *Engine
-	Keys      map[string]interface{}
+	Keys      map[string]interface{} // authorization key-value
 	Errors    ErrorMsgs
 	Accecpted []string
 }
@@ -213,6 +213,16 @@ func (c *Context) query(key string) (string, bool) {
 }
 
 func (c *Context) postForm(key string) (string, bool) {
+	req := c.Request
+	req.ParseMultipartForm(32 << 20) // 32 MB
+	if values := req.PostForm[key]; len(values) > 0 {
+		return values[0], true
+	}
+	if req.MultipartForm != nil && req.MultipartForm.File != nil {
+		if values := req.MultipartForm.Value[key]; len(values) > 0 {
+			return values[0], true
+		}
+	}
 	return "", false
 }
 
@@ -270,7 +280,6 @@ func (c *Context) ContentType() string {
 // Intelligent shortcut for c.Writer.Header().Set(key, value)
 // it writes a header in the response.
 // If value == "", this method removes the header `c.Writer.Header().Del(key)`
-
 func (c *Context) Header(key, value string) {
 	if len(value) == 0 {
 		c.Writer.Header().Del(key)
@@ -282,7 +291,7 @@ func (c *Context) Header(key, value string) {
 func (c *Context) Render(code int, r render.Render) {
 	c.writermen.WriteHeader(code)
 	if err := r.Write(c.Writer); err != nil {
-
+		debugPrintError(err)
 		c.AbortWithError(500, err).SetType(ErrorTypeRender)
 	}
 }
@@ -306,7 +315,7 @@ func (c *Context) IndentedJson(code int, obj interface{}) {
 // Serializes the given struct as JSON into the response body.
 // It also sets the Content-Type as "application/json".
 func (c *Context) JSON(code int, obj interface{}) {
-	c.Render(code, render.XML{Data: obj})
+	c.Render(code, render.JSON{Data: obj})
 }
 
 // Serializes the given struct as XML into the response body.
@@ -431,7 +440,6 @@ func (c *Context) Err() error {
 
 func (c *Context) Value(key interface{}) interface{} {
 	if key == 0 {
-
 		return c.Request
 	}
 
