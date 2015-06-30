@@ -1,6 +1,7 @@
 package gin
 
 import (
+	"crypto/subtle"
 	"encoding/base64"
 	"strconv"
 )
@@ -58,6 +59,12 @@ func BasicAuthForRealm(accounts Accounts, realm string) HandlerFunc {
 			c.Set(AuthUserKey, user)
 		}
 	}
+}
+
+// Implements a basic Basic HTTP Authorization. It takes as argument a map[string]string where
+// the key is the user name and the value is the password.
+func BasicAuth(accounts Accounts) HandlerFunc {
+	return BasicAuthForRealm(accounts, "")
 }
 
 func processAccounts(accounts Accounts) AuthPairs {
