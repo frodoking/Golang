@@ -110,12 +110,11 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 func safeHandler(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("safeHandler >> method %s", fn)
 		defer func() {
 			if e, ok := recover().(error); ok {
 				http.Error(w, e.Error(), http.StatusInternalServerError)
-				log.Println("WARN: panic in %v. -%v", fn, e)
-				log.Println(string(debug.Stack()))
+				fmt.Fprintf(w, "WARN: panic in %v. -%v", fn, e)
+				fmt.Fprintf(w, "%", string(debug.Stack()))
 			}
 		}()
 		fn(w, r)
@@ -138,7 +137,9 @@ func staticDirHandler(mux *http.ServeMux, prefix string, staticDir string, flags
 func main() {
 	// mux := http.NewServeMux()
 	// staticDirHandler(mux, "/assets/", "./public", 0)
-	http.HandleFunc("/", safeHandler(listHandler))
+	// 静态文件的另外一种处理方式
+	http.Handle("/", http.FileServer(http.Dir("/public/static/")))
+	http.HandleFunc("/list", safeHandler(listHandler))
 	http.HandleFunc("/view", safeHandler(viewHandler))
 	http.HandleFunc("/upload", safeHandler(uploadHandler))
 
