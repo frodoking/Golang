@@ -7,7 +7,7 @@
 <body>
 <ol>
 	{{range $.images}}
- 		<li><a href=\"/view?id={{.|urlquery}}">{{.|html}}</a></li>
+ 		<li><a href="/view?id={{.|urlquery}}">{{.|html}}</a></li>
  	{{end}}
 </ol>
 </body>

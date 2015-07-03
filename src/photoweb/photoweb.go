@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -51,7 +52,7 @@ func renderHtml(w http.ResponseWriter, templ string, locals map[string]interface
 
 func isExists(path string) bool {
 	_, err := os.Stat(path)
-	if err != nil {
+	if err == nil {
 		return true
 	}
 	return os.IsExist(err)
@@ -68,7 +69,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		filename := h.Filename
 		defer f.Close()
 
-		t, err := ioutil.TempFile(UPLOAD_DIR, filename)
+		t, err := os.Create(UPLOAD_DIR + "/" + filename)
+		// t, err := ioutil.TempFile(UPLOAD_DIR, filename)
 		check(err)
 		defer t.Close()
 
@@ -93,7 +95,7 @@ func viewHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
-	fileInfoArr, err := ioutil.ReadDir("./uploads")
+	fileInfoArr, err := ioutil.ReadDir(UPLOAD_DIR)
 	check(err)
 
 	locals := make(map[string]interface{})
@@ -108,6 +110,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 func safeHandler(fn http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("safeHandler >> method %s", fn)
 		defer func() {
 			if e, ok := recover().(error); ok {
 				http.Error(w, e.Error(), http.StatusInternalServerError)
@@ -133,13 +136,13 @@ func staticDirHandler(mux *http.ServeMux, prefix string, staticDir string, flags
 }
 
 func main() {
-	mux := http.NewServeMux()
-	staticDirHandler(mux, "/assets/", "./public", 0)
+	// mux := http.NewServeMux()
+	// staticDirHandler(mux, "/assets/", "./public", 0)
 	http.HandleFunc("/", safeHandler(listHandler))
 	http.HandleFunc("/view", safeHandler(viewHandler))
 	http.HandleFunc("/upload", safeHandler(uploadHandler))
 
-	err := http.ListenAndServe(":8080", mux)
+	err := http.ListenAndServe(":8080", nil /*mux*/)
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err.Error())
