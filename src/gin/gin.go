@@ -77,6 +77,7 @@ func New() *Engine {
 	}
 
 	engine.RouterGroup.engine = engine
+	// 设置New，返回Context
 	engine.pool.New = func() interface{} {
 		return engine.allocateContext()
 	}
@@ -220,6 +221,8 @@ func (e *Engine) RunUnix(file string) (err error) {
 
 // Conforms to the http.Handler interface. (实现了http.Handler接口的ServeHTTP方法)
 func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// Get返回Pool中的任意一个对象(此处为Context)。如果Pool为空，则调用New返回一个新创建的对象。如果没有设置New，则返回nil。
+	debugPrint("ServeHTTP Start >> method:%s, url:%s", req.Method, req.URL.Path)
 	c := e.pool.Get().(*Context)
 	c.writermen.reset(w)
 	c.Request = req
@@ -228,6 +231,7 @@ func (e *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	e.handleHTTPRequest(c)
 
 	e.pool.Put(c)
+	debugPrint("ServeHTTP End  >> method:%s, url:%s", req.Method, req.URL.Path)
 }
 
 func (e *Engine) handleHTTPRequest(c *Context) {
@@ -244,7 +248,7 @@ func (e *Engine) handleHTTPRequest(c *Context) {
 			if handlers != nil {
 				c.handlers = handlers
 				c.Params = params
-				c.Next()
+				c.Next() // 执行中间件的过程
 				c.writermen.WriteHeaderNow()
 				return
 			} else if httpMethod != "CONNECT" && path != "/" {

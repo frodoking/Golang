@@ -28,7 +28,7 @@ func ErrorLoggerT(typ ErrorType) HandlerFunc {
 		if !c.Writer.Written() {
 			json := c.Errors.ByType(typ).JSON()
 			if json != nil {
-
+				c.JSON(-1, json)
 			}
 		}
 	}
